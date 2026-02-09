@@ -1,0 +1,100 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb_checkpoints
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Model Files (too large for Git)
+*.h5
+*.pkl
+*.pth
+*.pt
+*.ckpt
+*.pb
+
+# Dataset Files (too large for Git)
+*.csv
+*.npz
+*.npy
+*.parquet
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
+logs/
+
+# Temporary Files
+*.tmp
+*.bak
+*.swp
+.cache/
+
+# Environment Variables
+.env
+.env.local
+
+# Compiled Files
+*.pyc
+
+# Coverage Reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Documentation Build
+docs/_build/
+
+# Distribution
+*.tar.gz
+*.zip
+
+# Secrets
+secrets.toml
+config.yaml
+credentials.json
