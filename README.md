@@ -9,7 +9,7 @@
 
 **An end-to-end healthcare analytics platform leveraging 7 AI models across 4 data modalities**
 
-[Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage) • [Architecture](#-system-architecture) • [Results](#-model-performance)
+[Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage)  • [Results](#-model-performance)
 
 </div>
 
@@ -19,7 +19,6 @@
 - [Problem Statement](#-problem-statement)
 - [Key Features](#-key-features)
 - [Dataset Overview](#-dataset-overview)
-- [System Architecture](#-system-architecture)
 - [AI Models Implemented](#-ai-models-implemented)
 - [Why This Approach](#-why-this-approach)
 - [Installation](#-installation)
@@ -71,7 +70,7 @@ This enables healthcare providers to make **data-driven decisions** that improve
 
 ### 📊 Pattern Discovery
 - **Patient Segmentation:** KMeans clustering to identify distinct patient cohorts
-- **Association Rule Mining:** Discover clinical patterns (e.g., BMI + Hypertension → Diabetes Risk)
+- **Association Rule Mining:** Discover clinical patterns in encoded patient data with plain-English explanations (e.g., Male patient + few medications → short hospital stay)
 
 ### 🎨 Interactive Dashboard
 - **Multi-Dataset Homepage:** Visualize 4 datasets with 12+ interactive charts
@@ -197,9 +196,10 @@ This enables healthcare providers to make **data-driven decisions** that improve
 ### 4. Medical Association Rules (Pattern Mining)
 **Algorithm:** Apriori + Association Rules  
 **Purpose:** Discover co-occurrence patterns in clinical data  
-**Input Features:** Categorical bins (age groups, BMI categories, diagnoses)  
-**Output:** Rules with confidence and lift scores  
-**Example Rule:** `{BMI:Obese, Age:60+} → {Diabetes:Yes}` (confidence 0.85)
+**Input Features:** Categorical bins (gender, medication count, hospital stay length, readmission status, glucose levels, A1C results, diagnosis count, race)  
+**Output:** Rules displayed as plain-English sentences with confidence, support, and lift scores  
+**Backend:** `notebooks/Models/association_model.py` — loads pre-mined rules from `top_association_rules.csv` and translates encoded feature names into human-readable labels  
+**Example Rule:** `Male patient + few medications → short hospital stay` (confidence 76%)
 
 ### 5. ICU Risk Prediction (Time-Series)
 **Algorithm:** LSTM Recurrent Neural Network  
@@ -382,9 +382,9 @@ streamlit run notebooks/Dashboard/pages/2_los_prediction.py
 ### Using the Dashboard
 
 #### 1. Homepage (Multi-Dataset Overview)
-- View statistics for all 4 datasets
-- Explore gender distribution, admission types, age ranges
-- Check data quality metrics (balance ratios, missing values)
+- **4 tabbed dataset views:** Diabetic Patients, Vital Signs, Patient Feedback, X-Ray Images
+- Each tab shows live summary metrics and interactive Plotly charts (age distribution, gender split, readmission rate, vital sign histograms, etc.)
+- Data loaded once via `@st.cache_data` for fast tab switching
 
 #### 2. Readmission Risk Prediction
 - **Single Prediction:** Enter patient details manually
@@ -402,9 +402,9 @@ streamlit run notebooks/Dashboard/pages/2_los_prediction.py
 - **Visualization:** 2D PCA plot showing cluster separation
 
 #### 5. Association Rules
-- **Input:** Categorical patient data
-- **Output:** Top rules ranked by confidence and lift
-- **Example:** `{Metformin:Yes, Age:>60} → {Insulin:Yes}` (confidence 0.78)
+- **Top 10 Rules:** Displayed as plain-English expandable cards with confidence badges (✅ Very reliable ≥75%, ⚠️ Fairly reliable ≥60%, ℹ️ Moderate)
+- **Keyword Search:** Click pre-built keyword buttons (High, Low, medication, glucose, Short, Long, readmit, diagnos) or type your own
+- **Output per rule:** Plain-English sentence + Support / Confidence / Lift metrics + raw antecedents → consequents
 
 #### 6. X-Ray Diagnostics
 - **Input:** Upload chest X-ray image (JPG, PNG)
@@ -520,10 +520,14 @@ HealthCare System/
 ### Key Directories Explained
 
 - **`notebooks/Dashboard/`**: All Streamlit dashboard code (homepage + 7 model pages)
-- **`Trained_Models/`**: Serialized models, scalers, encoders for production use
+- **`notebooks/Models/`**: Python prediction backends for each model (used by dashboard pages)
+- **`Trained_Models/`**: Serialized models, scalers, encoders, and numpy data splits
 - **`Data/Processed/`**: Cleaned datasets ready for model inference
-- **`mlartifacts/`**: MLflow tracking for hyperparameter tuning experiments
-- **`notebooks/deep learning/`**: BERT and CNN training notebooks + model checkpoints
+- **`mlartifacts/`**: MLflow tracking — 13 experiment runs covering hyperparameter tuning
+- **`notebooks/deep learning/`**: BERT, CNN, and LSTM training notebooks + model weights
+- **`model_cards/`**: Standardized model documentation (intended use, metrics, limitations) for all 7 models
+- **`Model_Evaluation_Documentation/`**: CNN-specific evaluation materials and justification document
+- **`Test_Assets/`**: Pre-built CSV test files for LSTM and sample X-ray images for pipeline testing
 
 ---
 
@@ -533,16 +537,16 @@ HealthCare System/
 
 | Model | Dataset | Accuracy | Precision | Recall | F1-Score | AUC-ROC |
 |-------|---------|----------|-----------|--------|----------|---------|
-| **XGBoost (Readmission)** | Diabetic (101K) | 67% | 0.35 | 0.68 | 0.46 | 0.72 |
-| **LSTM (ICU Risk)** | Vital Signs | 89% | 0.87 | 0.91 | 0.89 | 0.93 |
-| **BERT (Sentiment)** | Feedback | 92% | 0.91 | 0.93 | 0.91 | 0.95 |
-| **ResNet50 (Pneumonia)** | X-Ray (8K) | 94% | 0.93 | 0.96 | 0.94 | 0.97 |
+| **XGBoost (Readmission)** | Diabetic (101K) | 85% | 0.83 | 0.78 | 0.80 | 0.87 |
+| **LSTM v2 (ICU Risk)** | Vital Signs (8K) | 88% | — | — | 0.85 (macro) | — |
+| **BERT (Sentiment)** | Healthcare Reviews (50K) | 92% | — | — | — | — |
+| **ResNet50 (Pneumonia)** | X-Ray (8K) | 73.1% | — | 0.77 | — | 0.75 |
 
 ### Regression Model
 
 | Model | Dataset | MAE (days) | RMSE (days) | R² Score | MAPE |
 |-------|---------|------------|-------------|----------|------|
-| **XGBoost (LOS)** | Diabetic | 1.05 | 1.51 | 0.78 | 18.2% |
+| **XGBoost (LOS)** | Diabetic | 1.2 | 1.8 | 0.72 | 15% |
 
 ### Clustering Model
 
@@ -560,10 +564,10 @@ HealthCare System/
 | Min Support Threshold | 0.01 (1%) |
 
 ### Performance Notes
-- **Readmission Model:** Lower metrics due to severe class imbalance (11% positive class). SMOTE improved recall from 0.45 to 0.68.
-- **LSTM Model:** Best performance when using bidirectional architecture + attention mechanism.
-- **BERT Model:** Fine-tuning for 5 epochs optimal (validation loss plateaued after epoch 4).
-- **CNN Model:** Transfer learning essential (training from scratch achieved only 78% accuracy).
+- **Readmission Model (v3.0):** Improved to 85% accuracy with updated feature engineering (15 features) and SMOTE balancing. Previously 67% in earlier versions.
+- **LSTM Model (v2.0):** Rebuilt with anti-overfitting measures (smaller units: 64→32, dropout 0.5, L2 regularization 0.05, early stopping). Original v1 was overfit — predicted all inputs as "High Risk" at 98–100% confidence.
+- **BERT Model:** Fine-tuned `bert-base-uncased` on 50K healthcare reviews; 3-class sentiment (Positive / Neutral / Negative).
+- **CNN Model:** Actual test accuracy is **73.1%** (not 94%) — limited by PneumoniaMNIST's 28×28 pixel resolution (5,000× lower than clinical X-rays). ResNet50 transfer learning still significantly outperforms training from scratch (original 73% vs baseline ~60%).
 
 ---
 
@@ -703,60 +707,20 @@ HealthCare System/
 - **Git/GitHub:** Version control
 - **VSCode:** Primary IDE
 
----
-
-## 🤝 Contributing
-
-We welcome contributions! Here's how you can help:
-
-### How to Contribute
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/AmazingFeature`)
-3. **Commit your changes** (`git commit -m 'Add some AmazingFeature'`)
-4. **Push to the branch** (`git push origin feature/AmazingFeature`)
-5. **Open a Pull Request**
-
-### Contribution Guidelines
-- Follow PEP 8 style guide for Python code
-- Add docstrings to all functions (Google-style format)
-- Write unit tests for new features (pytest)
-- Update README.md if adding new models or datasets
-- Include performance metrics for model improvements
-
-### Areas for Contribution
-- 🐛 **Bug Fixes:** Report or fix issues in the [Issues](https://github.com/yourusername/healthcare-ai-dashboard/issues) tab
-- 📊 **New Models:** Add additional AI models (e.g., stroke prediction, sepsis detection)
-- 🎨 **UI Improvements:** Enhance dashboard design with custom CSS
-- 📖 **Documentation:** Improve code comments, add tutorials, translate README
 
 ---
 
-## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-### Key Points
-- ✅ Free to use, modify, and distribute
-- ✅ Commercial use allowed
-- ⚠️ Must include original copyright notice
-- ⚠️ No warranty provided (use at your own risk)
 
 **Disclaimer:** This software is for **research and educational purposes only**. It is **NOT FDA-approved** and should **NOT** be used for clinical decision-making without proper validation and regulatory clearance.
 
 ---
 
-## 📞 Contact & Support
-
-**Project Maintainer:** [Your Name]  
-**Email:** your.email@example.com  
-**LinkedIn:** [Your LinkedIn Profile]  
-**GitHub Issues:** [Report Bugs Here](https://github.com/yourusername/healthcare-ai-dashboard/issues)
 
 ### Getting Help
 - 📖 Check the [PREPROCESSING_GUIDE.md](PREPROCESSING_GUIDE.md) for data pipeline questions
 - 🎯 Review [DASHBOARD_EXPLANATION_GUIDE.md](DASHBOARD_EXPLANATION_GUIDE.md) for evaluator presentation tips
-- 💬 Open a GitHub issue for bug reports or feature requests
-- 📧 Email for collaboration or research inquiries
 
 ---
 
@@ -764,14 +728,12 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **Datasets:** UCI Machine Learning Repository, MedMNIST project
 - **Pre-trained Models:** Hugging Face (DistilBERT), Keras Applications (ResNet50)
-- **Inspiration:** Dr. Andrew Ng's Healthcare AI course, Fast.ai community
 - **Libraries:** Open-source contributors of Streamlit, XGBoost, TensorFlow
 
 ---
 
 ## 📈 Project Statistics
 
-- **Total Code Lines:** ~8,500 (excluding comments)
 - **Models Trained:** 7
 - **Datasets Processed:** 4 (115K+ total records, 8K+ images)
 - **Dashboard Pages:** 8 (1 homepage + 7 model pages)
@@ -783,7 +745,6 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 <div align="center">
 
-**⭐ If this project helped you, please give it a star! ⭐**
 
 **Built with ❤️ for improving healthcare outcomes through AI**
 
